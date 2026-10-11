@@ -40,7 +40,8 @@ database/
     ├── 04_views.sql                                 # 视图(外模式): 列表/详情/诗集目录
     ├── 05_triggers.sql                              # 5 个触发器
     ├── 06_procedures.sql                            # 4 个存储过程(含事务)
-    └── 07_seed_data.sql                             # 种子数据(现代诗歌节选)
+    ├── 07_seed_data.sql                             # 种子数据(现代诗歌节选)
+    └── 08_expand_data.sql                           # 数据扩充(13位诗人+13首名篇节选, 可重复执行)
 ```
 
 ## 环境要求
@@ -65,6 +66,8 @@ mysql -u root -p --default-character-set=utf8mb4 < sql/04_views.sql
 mysql -u root -p --default-character-set=utf8mb4 < sql/05_triggers.sql
 mysql -u root -p --default-character-set=utf8mb4 < sql/06_procedures.sql
 mysql -u root -p --default-character-set=utf8mb4 < sql/07_seed_data.sql
+# 可选: 扩充数据(13位近现代诗人+13首名篇节选, 幂等, 重复执行不会产生重复数据)
+mysql -u root -p --default-character-set=utf8mb4 < sql/08_expand_data.sql
 ```
 
 或用 Workbench / DBeaver 依次打开执行。注意：
