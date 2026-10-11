@@ -99,6 +99,9 @@ mvn spring-boot:run
 | `POST /api/auth/login` | 登录, JSON: `{username, password}`, 成功后 Set-Cookie | BCrypt 校验 + `user` 表 |
 | `GET /api/auth/me` | 当前登录用户(未登录时 data=null) | Session + `user` 表 |
 | `POST /api/auth/logout` | 登出, 销毁服务端会话 | Session |
+| `POST /api/poems/{id}/favorite` | 收藏(需登录), 可选参数 favoriteType | favorite 表, UNIQUE(user_id,poem_id) 防重 |
+| `DELETE /api/poems/{id}/favorite` | 取消收藏(需登录) | favorite 表 |
+| `GET /api/favorites?page=&pageSize=` | 我的收藏(需登录, 按收藏时间倒序) | favorite JOIN poem/poet |
 
 种子用户演示密码：admin→admin123，reader1/reader2→reader123（重新执行 sql/01~07 后生效；也可以直接调注册接口建测试用户）。
 

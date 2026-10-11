@@ -78,6 +78,13 @@
         WHERE poem_id = #{poemId}
     </select>
 
+    <!-- 存在性检查 -->
+    <select id="countPoemById" resultType="long">
+        SELECT COUNT(*)
+        FROM poem
+        WHERE poem_id = #{poemId}
+    </select>
+
     <!-- 中文全文检索: 调用存储过程, ngram 解析器分词, 按相关度排序 -->
     <select id="searchFulltext" statementType="CALLABLE"
             resultType="com.poetry.entity.PoemFulltext">

@@ -33,6 +33,9 @@ public interface PoemMapper {
     /** 诗歌详情: 查询视图 v_poem_detail */
     PoemDetail getPoemDetail(@Param("poemId") Long poemId);
 
+    /** 诗歌存在性检查(收藏/评分/评论等互动操作前置校验用) */
+    long countPoemById(@Param("poemId") Long poemId);
+
     /** 中文全文检索: 调用存储过程 sp_fulltext_search_poems (statementType=CALLABLE) */
     List<PoemFulltext> searchFulltext(@Param("keyword") String keyword);
 }
