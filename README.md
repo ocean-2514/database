@@ -105,6 +105,10 @@ mvn spring-boot:run
 | `PUT /api/poems/{id}/rating?score=` | 评分/改分(需登录), data 返回 created/updated | ON DUPLICATE KEY UPDATE 覆盖写, CHECK(1-5) 兜底 |
 | `GET /api/poems/{id}/rating` | 我的评分(需登录, 未评为 null) | rating 表 |
 | `DELETE /api/poems/{id}/rating` | 取消评分(需登录) | rating 表 |
+| `GET /api/poems/{id}/comments?page=&pageSize=` | 评论列表(公开, 按时间倒序) | comment JOIN `user` |
+| `POST /api/poems/{id}/comments` | 发表评论(需登录), JSON: {content} | comment 表, useGeneratedKeys 回填ID |
+| `PUT /api/comments/{id}` | 修改自己的评论(需登录) | 属主校验, 非属主 403 |
+| `DELETE /api/comments/{id}` | 删除评论(需登录, 属主或管理员) | 属主/角色校验, 403/404 语义 |
 
 种子用户演示密码：admin→admin123，reader1/reader2→reader123（重新执行 sql/01~07 后生效；也可以直接调注册接口建测试用户）。
 

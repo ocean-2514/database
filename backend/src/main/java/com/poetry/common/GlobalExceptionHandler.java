@@ -22,6 +22,13 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(400, e.getMessage());
     }
 
+    /** 业务异常: 携带明确的状态码(403 无权操作 / 404 资源不存在等) */
+    @ExceptionHandler(BusinessException.class)
+    public ApiResponse<Void> handleBusiness(BusinessException e) {
+        log.warn("业务拒绝({}): {}", e.getCode(), e.getMessage());
+        return ApiResponse.error(e.getCode(), e.getMessage());
+    }
+
     /** 查询参数类型不匹配(如 score=abc) */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ApiResponse<Void> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
