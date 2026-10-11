@@ -109,6 +109,10 @@ mvn spring-boot:run
 | `POST /api/poems/{id}/comments` | 发表评论(需登录), JSON: {content} | comment 表, useGeneratedKeys 回填ID |
 | `PUT /api/comments/{id}` | 修改自己的评论(需登录) | 属主校验, 非属主 403 |
 | `DELETE /api/comments/{id}` | 删除评论(需登录, 属主或管理员) | 属主/角色校验, 403/404 语义 |
+| `GET/POST/PUT/DELETE /api/admin/poets` | 诗人管理(需管理员) | poet 表; 删除有作品者被触发器 trg_poet_bd 拦截 |
+| `POST/PUT/DELETE /api/admin/poems` | 诗歌管理(需管理员), 字数由触发器自动维护 | poem 表, 外键级联下架 |
+| `GET/POST/PUT/DELETE /api/admin/collections` | 诗集管理(需管理员), 新建调事务存储过程 | v_collection_catalog / sp_add_collection_with_poems |
+| `POST/PUT/DELETE /api/admin/genres` | 流派管理(需管理员) | genre 表, UNIQUE 防重名 |
 
 种子用户演示密码：admin→admin123，reader1/reader2→reader123（重新执行 sql/01~07 后生效；也可以直接调注册接口建测试用户）。
 

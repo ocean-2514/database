@@ -38,4 +38,13 @@ public interface PoemMapper {
 
     /** 中文全文检索: 调用存储过程 sp_fulltext_search_poems (statementType=CALLABLE) */
     List<PoemFulltext> searchFulltext(@Param("keyword") String keyword);
+
+    /** 管理端: 新增诗歌(word_count 由触发器 trg_poem_word_count_bi 维护), 回填自增主键 */
+    int insertPoem(com.poetry.entity.Poem poem);
+
+    /** 管理端: 修改诗歌(正文变化时触发器 trg_poem_word_count_bu 重算字数) */
+    int updatePoem(com.poetry.entity.Poem poem);
+
+    /** 管理端: 下架诗歌(互动数据与收录/流派关系经外键级联清除) */
+    int deletePoemById(@Param("poemId") Long poemId);
 }
