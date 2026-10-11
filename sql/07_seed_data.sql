@@ -4,7 +4,8 @@
 -- 说明:
 --   * 数据仅用于课程演示, 诗歌正文均为节选;
 --   * ISBN 为演示用虚构数据;
---   * password_hash 为占位符, 实际由后端以 BCrypt 等算法生成;
+--   * password_hash 为真实 BCrypt 哈希, 演示密码: admin→admin123, reader1/reader2→reader123;
+--     同一明文两次哈希结果不同(随机盐), 校验由后端 BCryptPasswordEncoder.matches 完成;
 --   * word_count 无需手填, 由触发器 trg_poem_word_count_bi 维护。
 -- =============================================================
 USE poetry_db;
@@ -89,10 +90,11 @@ JOIN collection c ON c.title = t.ctitle
 JOIN poem p       ON p.title = t.ptitle;
 
 -- ---------- 用户 ----------
+-- 密码(明文仅供课程演示): admin→admin123, reader1→reader123, reader2→reader123
 INSERT INTO `user` (username, password_hash, email, role, status) VALUES
-('admin',   '$2a$10$REPLACE_WITH_REAL_BCRYPT_HASH_01', 'admin@poetry.cn',   'admin',  'active'),
-('reader1', '$2a$10$REPLACE_WITH_REAL_BCRYPT_HASH_02', 'reader1@poetry.cn', 'reader', 'active'),
-('reader2', '$2a$10$REPLACE_WITH_REAL_BCRYPT_HASH_03', 'reader2@poetry.cn', 'reader', 'active');
+('admin',   '$2a$10$elqgHse9g5MVBk7p817WceePn/O3kQ.sgbmDbXpO5lLXUmU8YiQ/6', 'admin@poetry.cn',   'admin',  'active'),
+('reader1', '$2a$10$Y7xaT/jCwdr8z1fmam..quXw0ROXtf0XwGYjoBHIcLaIIO4rPUygu', 'reader1@poetry.cn', 'reader', 'active'),
+('reader2', '$2a$10$COITpZwDz7Vdy4b7dHtLxeddmxaQ6/5imY1vugrVilaEkiaSTnYzm', 'reader2@poetry.cn', 'reader', 'active');
 
 -- ---------- 评分 ----------
 INSERT INTO rating (user_id, poem_id, score) VALUES

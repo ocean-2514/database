@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * 诗歌数据访问接口。
- * SQL 实现在 resources/mapper/PoemMapper.xml —— 按课程要求全部为手写原生 SQL。
+ * SQL 实现在 resources/mapper/PoemMapper.xml, 全部为手写原生 SQL。
  */
 public interface PoemMapper {
 

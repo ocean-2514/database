@@ -95,6 +95,12 @@ mvn spring-boot:run
 | `GET /api/poems/fulltext?keyword=` | 中文全文检索(按相关度排序) | 存储过程 sp_fulltext_search_poems |
 | `GET /api/poems/{id}` | 诗歌详情(含作者/流派/统计) | 视图 v_poem_detail |
 | `GET /api/genres` | 流派列表(筛选下拉框) | genre 表 |
+| `POST /api/auth/register` | 注册, JSON: `{username, password, email}` | 存储过程 sp_register_user(OUT 回填新用户ID) |
+| `POST /api/auth/login` | 登录, JSON: `{username, password}`, 成功后 Set-Cookie | BCrypt 校验 + `user` 表 |
+| `GET /api/auth/me` | 当前登录用户(未登录时 data=null) | Session + `user` 表 |
+| `POST /api/auth/logout` | 登出, 销毁服务端会话 | Session |
+
+种子用户演示密码：admin→admin123，reader1/reader2→reader123（重新执行 sql/01~07 后生效；也可以直接调注册接口建测试用户）。
 
 冒烟测试：浏览器访问 `http://localhost:8080/api/poems?keyword=康桥` 与 `http://localhost:8080/api/poems/1`。
 SQL 语句全部手写在 `backend/src/main/resources/mapper/*.xml`，满足课程"原生 SQL"要求（MyBatis 仅做参数映射）。
