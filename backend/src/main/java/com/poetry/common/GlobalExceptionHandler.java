@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * 全局异常处理: 任何异常都转成统一的 JSON 响应, 前端不必处理裸错误页。
@@ -19,6 +20,12 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleBadRequest(IllegalArgumentException e) {
         log.warn("请求参数错误: {}", e.getMessage());
         return ApiResponse.error(400, e.getMessage());
+    }
+
+    /** 查询参数类型不匹配(如 score=abc) */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ApiResponse<Void> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        return ApiResponse.error(400, "参数类型不正确: " + e.getName());
     }
 
     /** 兜底: 数据库异常、未预期异常等 */

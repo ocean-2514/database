@@ -102,6 +102,9 @@ mvn spring-boot:run
 | `POST /api/poems/{id}/favorite` | 收藏(需登录), 可选参数 favoriteType | favorite 表, UNIQUE(user_id,poem_id) 防重 |
 | `DELETE /api/poems/{id}/favorite` | 取消收藏(需登录) | favorite 表 |
 | `GET /api/favorites?page=&pageSize=` | 我的收藏(需登录, 按收藏时间倒序) | favorite JOIN poem/poet |
+| `PUT /api/poems/{id}/rating?score=` | 评分/改分(需登录), data 返回 created/updated | ON DUPLICATE KEY UPDATE 覆盖写, CHECK(1-5) 兜底 |
+| `GET /api/poems/{id}/rating` | 我的评分(需登录, 未评为 null) | rating 表 |
+| `DELETE /api/poems/{id}/rating` | 取消评分(需登录) | rating 表 |
 
 种子用户演示密码：admin→admin123，reader1/reader2→reader123（重新执行 sql/01~07 后生效；也可以直接调注册接口建测试用户）。
 
