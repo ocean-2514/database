@@ -12,6 +12,20 @@
 
 ```
 database/
+├── backend/                                         # Spring Boot 3 服务器端
+│   ├── pom.xml
+│   └── src/main/
+│       ├── java/com/poetry/
+│       │   ├── PoetryApplication.java               # 入口, @MapperScan
+│       │   ├── common/                              # 统一响应/分页/全局异常
+│       │   ├── config/WebConfig.java                # CORS(允许 Vue 开发服务器)
+│       │   ├── controller/                          # REST 接口层
+│       │   ├── service/                             # 业务层
+│       │   ├── mapper/                              # MyBatis 接口
+│       │   └── entity/                              # 实体/结果映射对象
+│       └── resources/
+│           ├── application.yml                      # 数据源/MyBatis 配置
+│           └── mapper/*.xml                         # ★ 全部 SQL 手写在这里
 ├── docs/
 │   ├── 数据库大作业指导手册-应用系统设计与实现.md   # 课程要求原文
 │   ├── 设计文档.md                                  # 题目提交说明(实体/联系/功能/分工)
@@ -60,6 +74,30 @@ mysql -u root -p --default-character-set=utf8mb4 < sql/07_seed_data.sql
 - 中文 Windows 的命令行默认 GBK 编码，务必带 `--default-character-set=utf8mb4`，否则中文会乱码或建表失败。
 
 完成后可用 `CALL sp_search_poems('康桥', NULL, NULL, NULL, NULL, 2, 1, 10);` 验证。
+
+## 后端启动
+
+```bash
+cd backend
+# 1) 配置数据库密码(二选一, 不要写进会提交的文件):
+#    a) 复制 application-local.yml.example 为 application-local.yml, 填入你的密码(推荐)
+#    b) 或设置环境变量 DB_PASSWORD
+# 2) 启动(有 Maven 时):
+mvn spring-boot:run
+#    没有 Maven 时, 用 IDEA 打开 backend 目录直接运行 PoetryApplication
+```
+
+已实现的接口（统一返回 `{code, message, data}`）：
+
+| 接口 | 说明 | 数据库端 |
+| --- | --- | --- |
+| `GET /api/poems?keyword=&poetName=&genre=&yearFrom=&yearTo=&orderBy=&page=&pageSize=` | 组合检索(分页), orderBy: 0最新 1评分最高 2标题 | poem JOIN poet + 动态条件(COUNT+LIMIT) |
+| `GET /api/poems/fulltext?keyword=` | 中文全文检索(按相关度排序) | 存储过程 sp_fulltext_search_poems |
+| `GET /api/poems/{id}` | 诗歌详情(含作者/流派/统计) | 视图 v_poem_detail |
+| `GET /api/genres` | 流派列表(筛选下拉框) | genre 表 |
+
+冒烟测试：浏览器访问 `http://localhost:8080/api/poems?keyword=康桥` 与 `http://localhost:8080/api/poems/1`。
+SQL 语句全部手写在 `backend/src/main/resources/mapper/*.xml`，满足课程"原生 SQL"要求（MyBatis 仅做参数映射）。
 
 ## 开发约定
 

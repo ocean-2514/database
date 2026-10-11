@@ -1,0 +1,8 @@
+# 个人本地配置模板。
+# 用法: 把本文件复制一份改名为 application-local.yml, 填入你自己的 MySQL 密码。
+# application-local.yml 已加入 .gitignore, 不会被提交; 每个组员各配各的。
+# 注意: 文件必须和 pom.xml 在同一目录(backend/)下;
+#       若用 IDEA 运行, 请确认 Run Configuration 的 Working directory 是 backend 目录。
+spring:
+  datasource:
+    password: "你的MySQL密码"
