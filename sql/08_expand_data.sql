@@ -4,7 +4,7 @@
 -- 在 07_seed_data.sql 之后执行, 可重复执行(幂等):
 --   * 诗人/诗集按名称判重, 已存在则跳过;
 --   * 诗歌按 (标题) 判重;
---   * 流派/诗集-诗歌 关系用 INSERT IGNORE(复合主键天然防重)。
+--   * 流派/诗集-诗歌 关系用 INSERT IGNORE(复合主键防重)。
 -- 版权说明: 收录内容均为广为流传的短篇节选, 仅用于课程教学演示;
 --   正式对外提供服务请使用公版作品或获得授权。
 -- 说明: word_count 不手填, 由触发器 trg_poem_word_count_bi 自动维护;
@@ -77,7 +77,7 @@ INSERT INTO poem (title, content, create_year, form, appreciation, poet_id)
 SELECT '死水',
        '这是一沟绝望的死水，\n清风吹不起半点漪沦。\n不如多扔些破铜烂铁，\n爽性泼你的剩菜残羹。',
        1926, '自由诗',
-       '以"一沟绝望的死水"象征沉滞的现实, 是"三美"主张的极致实践, 反讽辛辣而形式整饬。',
+       '以"一沟绝望的死水"象征沉滞的现实, 是"三美"主张的集中体现, 反讽辛辣而形式整饬。',
        poet_id
 FROM poet WHERE name = '闻一多'
   AND NOT EXISTS (SELECT 1 FROM poem WHERE title = '死水');

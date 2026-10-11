@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 
 /**
  * 评分业务: 评分/改分/查我的评分/取消评分。
- * 应用层校验分值范围, 数据库端 CHECK (score BETWEEN 1 AND 5) 兜底。
- * 平均分不落库, 由查询现算(v_poem_brief 等)——评分变化无需维护任何统计列。
+ * 应用层校验分值范围, 数据库端 CHECK (score BETWEEN 1 AND 5) 约束校验。
+ * 平均分不落库, 由查询实时计算(v_poem_brief 等)——评分变化无需维护任何统计列。
  */
 @Service
 public class RatingService {

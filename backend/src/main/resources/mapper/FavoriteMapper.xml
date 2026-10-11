@@ -19,7 +19,7 @@
         WHERE user_id = #{userId} AND poem_id = #{poemId}
     </delete>
 
-    <!-- 我的收藏(当前页): 收藏时间倒序, JOIN 出诗歌与作者信息, 评分现算 -->
+    <!-- 我的收藏(当前页): 收藏时间倒序, JOIN 出诗歌与作者信息, 评分实时计算 -->
     <select id="listUserFavorites" resultType="com.poetry.entity.FavoriteItem">
         SELECT p.poem_id,
                p.title,

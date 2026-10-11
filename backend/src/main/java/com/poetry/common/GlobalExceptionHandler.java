@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(400, "参数类型不正确: " + e.getName());
     }
 
-    /** 兜底: 数据库异常、未预期异常等 */
+    /** 数据库异常、未预期异常等 */
     @ExceptionHandler(Exception.class)
     public ApiResponse<Void> handleOther(Exception e) {
         log.error("服务器内部错误", e);

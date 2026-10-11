@@ -31,7 +31,7 @@
         </where>
     </sql>
 
-    <!-- 组合检索(当前页数据): 统计列用相关子查询现算,
+    <!-- 组合检索(当前页数据): 统计列用相关子查询实时计算,
          ORDER BY 走别名 avg_score (MySQL 允许 ORDER BY 引用列别名) -->
     <select id="searchPoems" resultType="com.poetry.entity.PoemBrief">
         SELECT p.poem_id,

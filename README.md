@@ -25,7 +25,7 @@ database/
 │       │   └── entity/                              # 实体/结果映射对象
 │       └── resources/
 │           ├── application.yml                      # 数据源/MyBatis 配置
-│           └── mapper/*.xml                         # ★ 全部 SQL 手写在这里
+│           └── mapper/*.xml                         # 全部 SQL 手写在这里(课程要求原生 SQL)
 ├── docs/
 │   ├── 数据库大作业指导手册-应用系统设计与实现.md   # 课程要求原文
 │   ├── 设计文档.md                                  # 题目提交说明(实体/联系/功能/分工)
@@ -105,7 +105,7 @@ mvn spring-boot:run
 | `POST /api/poems/{id}/favorite` | 收藏(需登录), 可选参数 favoriteType | favorite 表, UNIQUE(user_id,poem_id) 防重 |
 | `DELETE /api/poems/{id}/favorite` | 取消收藏(需登录) | favorite 表 |
 | `GET /api/favorites?page=&pageSize=` | 我的收藏(需登录, 按收藏时间倒序) | favorite JOIN poem/poet |
-| `PUT /api/poems/{id}/rating?score=` | 评分/改分(需登录), data 返回 created/updated | ON DUPLICATE KEY UPDATE 覆盖写, CHECK(1-5) 兜底 |
+| `PUT /api/poems/{id}/rating?score=` | 评分/改分(需登录), data 返回 created/updated | ON DUPLICATE KEY UPDATE 覆盖写, CHECK(1-5) 约束校验 |
 | `GET /api/poems/{id}/rating` | 我的评分(需登录, 未评为 null) | rating 表 |
 | `DELETE /api/poems/{id}/rating` | 取消评分(需登录) | rating 表 |
 | `GET /api/poems/{id}/comments?page=&pageSize=` | 评论列表(公开, 按时间倒序) | comment JOIN `user` |
@@ -132,4 +132,5 @@ SQL 语句全部手写在 `backend/src/main/resources/mapper/*.xml`，满足课�
 ## 文档索引
 
 - 设计类：`docs/设计文档.md`（题目与分工）、`docs/er/ER图说明.md`（E-R 图使用说明、联系→关系模式、3NF 判定要点）
+- **报告素材**：`docs/报告素材/`（按手册附录1/2章节组织的四份素材：需求分析、系统架构与实现、数据库设计、SQL与运行结果，含真实接口响应与测试汇总）
 - 指导手册要求的报告模板见 `docs/数据库大作业指导手册-应用系统设计与实现.md` 附录 1/2。

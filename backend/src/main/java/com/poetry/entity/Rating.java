@@ -10,7 +10,7 @@ public class Rating {
     private Long ratingId;
     private Long userId;
     private Long poemId;
-    private Integer score;      // 1-5, CHECK 约束兜底
+    private Integer score;      // 1-5, CHECK 约束校验
     private LocalDateTime ratingTime;
 
     public Long getRatingId() {
