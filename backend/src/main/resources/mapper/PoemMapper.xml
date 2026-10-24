@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.poetry.mapper.PoemMapper">
+
+    <!-- 共用的组合检索条件: 参数为空即忽略该条件, 语义与存储过程
+         sp_search_poems 的 WHERE 完全一致 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (p.title LIKE CONCAT('%', #{keyword}, '%')
+                 OR  p.content LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="poetName != null and poetName != ''">
+                AND pt.name LIKE CONCAT('%', #{poetName}, '%')
+            </if>
+            <if test="yearFrom != null">
+                AND p.create_year &gt;= #{yearFrom}
+            </if>
+            <if test="yearTo != null">
+                AND p.create_year &lt;= #{yearTo}
+            </if>
+            <if test="genre != null and genre != ''">
+                AND p.poem_id IN (
+                    SELECT pg.poem_id
+                      FROM poem_genre pg
+                      JOIN genre g ON g.genre_id = pg.genre_id
+                     WHERE g.name LIKE CONCAT('%', #{genre}, '%')
+                )
+            </if>
+        </where>
+    </sql>
+
+    <!-- 组合检索(当前页数据): 统计列用相关子查询实时计算,
+         ORDER BY 走别名 avg_score (MySQL 允许 ORDER BY 引用列别名) -->
+    <select id="searchPoems" resultType="com.poetry.entity.PoemBrief">
+        SELECT p.poem_id,
+               p.title,
+               pt.name AS poet_name,
+               p.create_year,
+               p.form,
+               p.word_count,
+               IFNULL((SELECT ROUND(AVG(r.score), 1)
+                         FROM rating r
+                        WHERE r.poem_id = p.poem_id), 0)                AS avg_score,
+               (SELECT COUNT(*) FROM rating r   WHERE r.poem_id = p.poem_id) AS rating_count,
+               (SELECT COUNT(*) FROM `comment` c WHERE c.poem_id = p.poem_id) AS comment_count,
+               (SELECT COUNT(*) FROM favorite f WHERE f.poem_id = p.poem_id)  AS favorite_count
+        FROM poem p
+        JOIN poet pt ON pt.poet_id = p.poet_id
+        <include refid="searchCondition"/>
+        <choose>
+            <when test="orderBy != null and orderBy == 1">
+                ORDER BY avg_score DESC, p.poem_id DESC
+            </when>
+            <when test="orderBy != null and orderBy == 2">
+                ORDER BY p.title ASC
+            </when>
+            <otherwise>
+                ORDER BY p.poem_id DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 组合检索(总数), 与 searchPoems 配合完成分页 -->
+    <select id="countPoems" resultType="long">
+        SELECT COUNT(*)
+        FROM poem p
+        JOIN poet pt ON pt.poet_id = p.poet_id
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 诗歌详情: 直接查询视图(外模式), 屏蔽底层多表连接 -->
+    <select id="getPoemDetail" resultType="com.poetry.entity.PoemDetail">
+        SELECT *
+        FROM v_poem_detail
+        WHERE poem_id = #{poemId}
+    </select>
+
+    <!-- 存在性检查 -->
+    <select id="countPoemById" resultType="long">
+        SELECT COUNT(*)
+        FROM poem
+        WHERE poem_id = #{poemId}
+    </select>
+
+    <!-- 中文全文检索: 调用存储过程, ngram 解析器分词, 按相关度排序 -->
+    <select id="searchFulltext" statementType="CALLABLE"
+            resultType="com.poetry.entity.PoemFulltext">
+        {CALL sp_fulltext_search_poems(#{keyword})}
+    </select>
+
+    <!-- ================ 管理端 ================ -->
+
+    <!-- 不写 word_count 列, 由触发器 trg_poem_word_count_bi 依据正文填充 -->
+    <insert id="insertPoem" useGeneratedKeys="true" keyProperty="poemId">
+        INSERT INTO poem (title, content, create_year, form, appreciation, poet_id)
+        VALUES (#{title}, #{content}, #{createYear}, #{form}, #{appreciation}, #{poetId})
+    </insert>
+
+    <!-- 正文变化时触发器 trg_poem_word_count_bu 重算字数 -->
+    <update id="updatePoem">
+        UPDATE poem
+        SET title = #{title},
+            content = #{content},
+            create_year = #{createYear},
+            form = #{form},
+            appreciation = #{appreciation},
+            poet_id = #{poetId}
+        WHERE poem_id = #{poemId}
+    </update>
+
+    <!-- 下架: rating/comment/favorite/poem_genre/collection_poem 经外键级联清除 -->
+    <delete id="deletePoemById">
+        DELETE FROM poem WHERE poem_id = #{poemId}
+    </delete>
+</mapper>
