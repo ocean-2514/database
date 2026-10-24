@@ -1,151 +1,167 @@
--- =============================================================
--- 02_create_tables.sql —— 基本表定义
--- 《诗歌信息检索与赏析管理系统》数据库脚本 2/7
--- 8 个实体表 + 2 个 m:n 联系表 = 10 张表
--- 命名约定: fk_ 外键约束 / uk_ 唯一约束 / chk_ 检查约束 / idx_ 普通索引
--- 说明:
---   * 表名 `user`、`comment` 与关键字同名, 统一加反引号;
---   * 评分记录 / 收藏记录是联系实体, 以 UNIQUE(user_id, poem_id)
---     保证同一用户对同一首诗只有一条评分 / 收藏;
---   * poem.word_count 为反范式冗余列, 由 05 脚本中的触发器维护;
---   * 删除策略: 互动数据(评分/评论/收藏)随用户或诗歌级联删除;
---     诗人被诗歌引用时禁止删除(RESTRICT + 触发器给出友好提示)。
--- =============================================================
+-- 02_create_tables.sql - 基本表定义
+-- MySQL 8.0.16+ / InnoDB / utf8mb4
+-- 8 个核心实体表 + 2 个多对多联系表。
+-- 字数和评分统计为派生值，不重复存储。
 USE poetry_db;
 SET NAMES utf8mb4;
 
--- 1. 诗人
-CREATE TABLE poet (
-    poet_id     BIGINT UNSIGNED   NOT NULL AUTO_INCREMENT COMMENT '诗人ID',
-    name        VARCHAR(50)       NOT NULL COMMENT '姓名',
-    pen_name    VARCHAR(50)       NULL COMMENT '笔名',
-    gender      ENUM('男','女')   NOT NULL DEFAULT '男' COMMENT '性别',
-    birth_year  SMALLINT UNSIGNED NULL COMMENT '生年',
-    death_year  SMALLINT UNSIGNED NULL COMMENT '卒年(在世诗人为NULL)',
-    nationality VARCHAR(30)       NOT NULL DEFAULT '中国' COMMENT '国籍',
-    biography   TEXT              NULL COMMENT '简介',
-    PRIMARY KEY (poet_id),
-    KEY idx_poet_name_year (name, birth_year)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='诗人表';
+CREATE TABLE IF NOT EXISTS poet (
+  poet_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  pen_name VARCHAR(100) NULL,
+  gender VARCHAR(20) NULL,
+  birth_year SMALLINT NULL COMMENT '负数表示公元前，NULL 表示未知',
+  death_year SMALLINT NULL COMMENT '负数表示公元前，NULL 表示未知',
+  nationality VARCHAR(64) NULL,
+  dynasty VARCHAR(64) NULL,
+  biography TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (poet_id),
+  KEY idx_poet_name (name),
+  KEY idx_poet_dynasty (dynasty, poet_id),
+  CONSTRAINT chk_poet_life_years
+    CHECK (birth_year IS NULL OR death_year IS NULL OR birth_year <= death_year)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='诗人';
 
--- 2. 诗歌(核心实体)
-CREATE TABLE poem (
-    poem_id      BIGINT UNSIGNED   NOT NULL AUTO_INCREMENT COMMENT '诗歌ID',
-    title        VARCHAR(100)      NOT NULL COMMENT '标题',
-    content      MEDIUMTEXT        NOT NULL COMMENT '正文',
-    create_year  SMALLINT UNSIGNED NULL COMMENT '创作年份',
-    form         VARCHAR(20)       NULL COMMENT '体裁: 自由诗/散文诗/十四行诗等',
-    word_count   INT UNSIGNED      NOT NULL DEFAULT 0 COMMENT '字数(触发器依据正文自动维护)',
-    appreciation TEXT              NULL COMMENT '赏析',
-    poet_id      BIGINT UNSIGNED   NOT NULL COMMENT '所属诗人',
-    PRIMARY KEY (poem_id),
-    KEY idx_poem_title (title),
-    KEY idx_poem_year (create_year),
-    CONSTRAINT fk_poem_poet FOREIGN KEY (poet_id) REFERENCES poet (poet_id)
-        ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='诗歌表';
+CREATE TABLE IF NOT EXISTS poetry_collection (
+  collection_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  collection_name VARCHAR(200) NOT NULL,
+  publication_year SMALLINT UNSIGNED NULL,
+  publisher VARCHAR(200) NULL,
+  isbn VARCHAR(20) NULL,
+  description TEXT NULL,
+  PRIMARY KEY (collection_id),
+  KEY idx_collection_name (collection_name),
+  UNIQUE KEY uq_collection_isbn (isbn),
+  CONSTRAINT chk_collection_publication_year
+    CHECK (publication_year IS NULL OR publication_year BETWEEN 1000 AND 9999)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='诗集';
 
--- 3. 诗集
-CREATE TABLE collection (
-    collection_id BIGINT UNSIGNED   NOT NULL AUTO_INCREMENT COMMENT '诗集ID',
-    title         VARCHAR(100)      NOT NULL COMMENT '诗集名称',
-    publish_year  SMALLINT UNSIGNED NULL COMMENT '出版年份',
-    publisher     VARCHAR(100)      NULL COMMENT '出版社',
-    isbn          VARCHAR(20)       NULL COMMENT 'ISBN',
-    introduction  TEXT              NULL COMMENT '简介',
-    PRIMARY KEY (collection_id),
-    UNIQUE KEY uk_collection_isbn (isbn)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='诗集表';
+CREATE TABLE IF NOT EXISTS genre (
+  genre_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  genre_name VARCHAR(100) NOT NULL,
+  description TEXT NULL,
+  PRIMARY KEY (genre_id),
+  UNIQUE KEY uq_genre_name (genre_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流派';
 
--- 4. 流派
-CREATE TABLE genre (
-    genre_id    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '流派ID',
-    name        VARCHAR(50)     NOT NULL COMMENT '流派名称',
-    description VARCHAR(500)    NULL COMMENT '描述',
-    PRIMARY KEY (genre_id),
-    UNIQUE KEY uk_genre_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='流派表';
+CREATE TABLE IF NOT EXISTS app_user (
+  user_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL COMMENT '只保存后端生成的密码哈希',
+  email VARCHAR(254) NOT NULL,
+  role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+  account_status ENUM('active', 'disabled') NOT NULL DEFAULT 'active',
+  registered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id),
+  UNIQUE KEY uq_app_user_username (username),
+  UNIQUE KEY uq_app_user_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统用户';
 
--- 5. 用户
-CREATE TABLE `user` (
-    user_id       BIGINT UNSIGNED         NOT NULL AUTO_INCREMENT COMMENT '用户ID',
-    username      VARCHAR(30)             NOT NULL COMMENT '用户名',
-    password_hash VARCHAR(255)            NOT NULL COMMENT '密码哈希(BCrypt等), 严禁明文',
-    email         VARCHAR(100)            NULL COMMENT '邮箱',
-    role          ENUM('reader','admin')  NOT NULL DEFAULT 'reader' COMMENT '角色: 读者/管理员',
-    status        ENUM('active','banned') NOT NULL DEFAULT 'active' COMMENT '账户状态',
-    register_time DATETIME                NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
-    PRIMARY KEY (user_id),
-    UNIQUE KEY uk_user_username (username),
-    UNIQUE KEY uk_user_email (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+CREATE TABLE IF NOT EXISTS poem (
+  poem_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  content MEDIUMTEXT NOT NULL,
+  creation_year SMALLINT NULL COMMENT '负数表示公元前，NULL 表示未知',
+  poem_form VARCHAR(40) NULL,
+  appreciation TEXT NULL,
+  poet_id BIGINT UNSIGNED NOT NULL,
+  publication_status ENUM('published', 'withdrawn') NOT NULL DEFAULT 'published',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (poem_id),
+  KEY idx_poem_poet_year (poet_id, creation_year),
+  KEY idx_poem_year (creation_year),
+  CONSTRAINT fk_poem_poet
+    FOREIGN KEY (poet_id) REFERENCES poet (poet_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT chk_poem_title_nonempty CHECK (CHAR_LENGTH(TRIM(title)) > 0),
+  CONSTRAINT chk_poem_content_nonempty CHECK (CHAR_LENGTH(TRIM(content)) > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='诗歌';
 
--- 6. 评分记录(联系实体)
-CREATE TABLE rating (
-    rating_id   BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT COMMENT '评分记录ID',
-    user_id     BIGINT UNSIGNED  NOT NULL COMMENT '评分用户',
-    poem_id     BIGINT UNSIGNED  NOT NULL COMMENT '被评诗歌',
-    score       TINYINT UNSIGNED NOT NULL COMMENT '评分(1-5)',
-    rating_time DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '评分时间',
-    PRIMARY KEY (rating_id),
-    UNIQUE KEY uk_rating_user_poem (user_id, poem_id),
-    CONSTRAINT chk_rating_score CHECK (score BETWEEN 1 AND 5),
-    CONSTRAINT fk_rating_user FOREIGN KEY (user_id) REFERENCES `user` (user_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_rating_poem FOREIGN KEY (poem_id) REFERENCES poem (poem_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评分记录表';
+CREATE TABLE IF NOT EXISTS poem_genre (
+  poem_id BIGINT UNSIGNED NOT NULL,
+  genre_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (poem_id, genre_id),
+  KEY idx_poem_genre_genre (genre_id, poem_id),
+  CONSTRAINT fk_poem_genre_poem
+    FOREIGN KEY (poem_id) REFERENCES poem (poem_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_poem_genre_genre
+    FOREIGN KEY (genre_id) REFERENCES genre (genre_id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='诗歌-流派多对多联系';
 
--- 7. 评论
-CREATE TABLE `comment` (
-    comment_id   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '评论ID',
-    user_id      BIGINT UNSIGNED NOT NULL COMMENT '评论用户',
-    poem_id      BIGINT UNSIGNED NOT NULL COMMENT '被评诗歌',
-    content      TEXT            NOT NULL COMMENT '评论内容',
-    comment_time DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '评论时间',
-    like_count   INT UNSIGNED    NOT NULL DEFAULT 0 COMMENT '点赞数',
-    PRIMARY KEY (comment_id),
-    KEY idx_comment_poem_time (poem_id, comment_time),
-    CONSTRAINT fk_comment_user FOREIGN KEY (user_id) REFERENCES `user` (user_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_comment_poem FOREIGN KEY (poem_id) REFERENCES poem (poem_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表';
+CREATE TABLE IF NOT EXISTS collection_poem (
+  collection_id BIGINT UNSIGNED NOT NULL,
+  poem_id BIGINT UNSIGNED NOT NULL,
+  sequence_no SMALLINT UNSIGNED NOT NULL COMMENT '诗集内顺序，从 1 开始',
+  PRIMARY KEY (collection_id, poem_id),
+  UNIQUE KEY uq_collection_sequence (collection_id, sequence_no),
+  KEY idx_collection_poem_poem (poem_id, collection_id),
+  CONSTRAINT fk_collection_poem_collection
+    FOREIGN KEY (collection_id) REFERENCES poetry_collection (collection_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_collection_poem_poem
+    FOREIGN KEY (poem_id) REFERENCES poem (poem_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT chk_collection_sequence_positive CHECK (sequence_no >= 1)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='诗集-诗歌多对多联系及编排顺序';
 
--- 8. 收藏记录(联系实体)
-CREATE TABLE favorite (
-    favorite_id   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '收藏记录ID',
-    user_id       BIGINT UNSIGNED NOT NULL COMMENT '收藏用户',
-    poem_id       BIGINT UNSIGNED NOT NULL COMMENT '被藏诗歌',
-    favorite_time DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
-    favorite_type VARCHAR(20)     NOT NULL DEFAULT '默认' COMMENT '收藏类型: 默认/最爱/想读等',
-    PRIMARY KEY (favorite_id),
-    UNIQUE KEY uk_favorite_user_poem (user_id, poem_id),
-    CONSTRAINT fk_favorite_user FOREIGN KEY (user_id) REFERENCES `user` (user_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_favorite_poem FOREIGN KEY (poem_id) REFERENCES poem (poem_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏记录表';
+CREATE TABLE IF NOT EXISTS poem_rating (
+  rating_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  poem_id BIGINT UNSIGNED NOT NULL,
+  score TINYINT UNSIGNED NOT NULL,
+  rated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (rating_id),
+  UNIQUE KEY uq_rating_user_poem (user_id, poem_id),
+  KEY idx_rating_poem_score (poem_id, score),
+  CONSTRAINT fk_rating_user
+    FOREIGN KEY (user_id) REFERENCES app_user (user_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_rating_poem
+    FOREIGN KEY (poem_id) REFERENCES poem (poem_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT chk_rating_score CHECK (score BETWEEN 1 AND 5)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户评分记录';
 
--- 9. 诗歌-流派 (m:n 联系)
-CREATE TABLE poem_genre (
-    poem_id  BIGINT UNSIGNED NOT NULL COMMENT '诗歌ID',
-    genre_id BIGINT UNSIGNED NOT NULL COMMENT '流派ID',
-    PRIMARY KEY (poem_id, genre_id),
-    CONSTRAINT fk_pg_poem  FOREIGN KEY (poem_id)  REFERENCES poem (poem_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_pg_genre FOREIGN KEY (genre_id) REFERENCES genre (genre_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='诗歌-流派联系表';
+CREATE TABLE IF NOT EXISTS poem_comment (
+  comment_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  poem_id BIGINT UNSIGNED NOT NULL,
+  content TEXT NOT NULL,
+  like_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '导入/统计值，不记录逐用户点赞关系',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (comment_id),
+  KEY idx_comment_poem_time (poem_id, created_at, comment_id),
+  KEY idx_comment_user_time (user_id, created_at),
+  CONSTRAINT fk_comment_user
+    FOREIGN KEY (user_id) REFERENCES app_user (user_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_comment_poem
+    FOREIGN KEY (poem_id) REFERENCES poem (poem_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT chk_comment_content_length
+    CHECK (CHAR_LENGTH(TRIM(content)) BETWEEN 1 AND 2000)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='诗歌评论';
 
--- 10. 诗集-诗歌 (m:n 联系, 含联系属性: 篇目序号)
-CREATE TABLE collection_poem (
-    collection_id BIGINT UNSIGNED   NOT NULL COMMENT '诗集ID',
-    poem_id       BIGINT UNSIGNED   NOT NULL COMMENT '诗歌ID',
-    seq_no        SMALLINT UNSIGNED NULL COMMENT '篇目序号',
-    PRIMARY KEY (collection_id, poem_id),
-    CONSTRAINT fk_cp_coll FOREIGN KEY (collection_id) REFERENCES collection (collection_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_cp_poem FOREIGN KEY (poem_id)       REFERENCES poem (poem_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='诗集-诗歌联系表';
+CREATE TABLE IF NOT EXISTS poem_favorite (
+  favorite_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  poem_id BIGINT UNSIGNED NOT NULL,
+  favorited_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  favorite_type VARCHAR(50) NOT NULL DEFAULT '默认',
+  PRIMARY KEY (favorite_id),
+  UNIQUE KEY uq_favorite_user_poem (user_id, poem_id),
+  KEY idx_favorite_poem (poem_id),
+  CONSTRAINT fk_favorite_user
+    FOREIGN KEY (user_id) REFERENCES app_user (user_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_favorite_poem
+    FOREIGN KEY (poem_id) REFERENCES poem (poem_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户收藏记录';

@@ -30,20 +30,24 @@ ST_ENTITY2 = "rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82
 ST_DIAMOND = "rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;"
 ST_ATTR    = "ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;fontSize=11;"
 ST_ATTR_PK = "ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=4;fontSize=11;"
+ST_ATTR_DERIVED = "ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;dashed=1;fontSize=11;"
 ST_TEXT    = "text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;"
 
 POET   = ("poet",  "诗人", [("poet_id", 1), ("姓名", 0), ("笔名", 0), ("性别", 0),
-                            ("生年", 0), ("卒年", 0), ("国籍", 0), ("简介", 0)])
+                            ("生年", 0), ("卒年", 0), ("国籍", 0), ("朝代/时期", 0),
+                            ("简介", 0), ("创建时间", 0), ("更新时间", 0)])
 POEM   = ("poem",  "诗歌", [("poem_id", 1), ("标题", 0), ("正文", 0), ("创作年份", 0),
-                            ("体裁", 0), ("字数", 0), ("赏析", 0)])
+                            ("体裁", 0), ("字数（派生）", 2), ("赏析", 0), ("发布状态", 0),
+                            ("创建时间", 0), ("更新时间", 0)])
 POEM_BRIEF = ("poem", "诗歌（属性见图二）", [])   # 用户域页面中的诗歌实体, 不重复画属性
 COLL   = ("coll",  "诗集", [("collection_id", 1), ("诗集名称", 0), ("出版年份", 0),
                             ("出版社", 0), ("ISBN", 0), ("简介", 0)])
 GENRE  = ("genre", "流派", [("genre_id", 1), ("流派名称", 0), ("描述", 0)])
-USER   = ("user",  "用户", [("user_id", 1), ("用户名", 0), ("密码", 0), ("邮箱", 0),
+USER   = ("user",  "用户", [("user_id", 1), ("用户名", 0), ("密码哈希", 0), ("邮箱", 0),
                             ("角色", 0), ("账户状态", 0), ("注册时间", 0)])
-RATING = ("rating","评分记录", [("rating_id", 1), ("评分", 0), ("评分时间", 0)])
-COMM   = ("comm",  "评论", [("comment_id", 1), ("评论内容", 0), ("评论时间", 0), ("点赞数", 0)])
+RATING = ("rating","评分记录", [("rating_id", 1), ("评分", 0), ("评分时间", 0), ("更新时间", 0)])
+COMM   = ("comm",  "评论", [("comment_id", 1), ("评论内容", 0), ("点赞统计值", 0),
+                            ("创建时间", 0), ("更新时间", 0)])
 FAV    = ("fav",   "收藏记录", [("favorite_id", 1), ("收藏时间", 0), ("收藏类型", 0)])
 
 # 9 个联系: (联系名, 实体A, 实体B, A端基数, B端基数)
@@ -90,24 +94,28 @@ def add_entity(cells, prefix, ent, x, y, style, attr_mode="rows", w=ENT_W, with_
         cx = x + w / 2
         for i, (name, pk) in enumerate(attrs[:n_top]):
             row_w = n_top * ATTR_W + (n_top - 1) * ATTR_GAP
-            rect(cells, f"{eid}_a{i}", name, ST_ATTR_PK if pk else ST_ATTR,
+            attr_style = ST_ATTR_PK if pk == 1 else ST_ATTR_DERIVED if pk == 2 else ST_ATTR
+            rect(cells, f"{eid}_a{i}", name, attr_style,
                  cx - row_w / 2 + i * (ATTR_W + ATTR_GAP), y - 70, ATTR_W, ATTR_H)
             edge(cells, f"{eid}_ae{i}", eid, f"{eid}_a{i}")
         for j, (name, pk) in enumerate(attrs[n_top:]):
             m = n - n_top
             row_w = m * ATTR_W + (m - 1) * ATTR_GAP
-            rect(cells, f"{eid}_a{n_top + j}", name, ST_ATTR_PK if pk else ST_ATTR,
+            attr_style = ST_ATTR_PK if pk == 1 else ST_ATTR_DERIVED if pk == 2 else ST_ATTR
+            rect(cells, f"{eid}_a{n_top + j}", name, attr_style,
                  cx - row_w / 2 + j * (ATTR_W + ATTR_GAP), y + ENT_H + 34, ATTR_W, ATTR_H)
             edge(cells, f"{eid}_ae{n_top + j}", eid, f"{eid}_a{n_top + j}")
     elif attr_mode == "left":                     # 属性竖排在实体左侧
         ax = x - 60 - ATTR_W
         for i, (name, pk) in enumerate(attrs):
-            rect(cells, f"{eid}_a{i}", name, ST_ATTR_PK if pk else ST_ATTR, ax, cy + i * step - ATTR_H / 2, ATTR_W, ATTR_H)
+            attr_style = ST_ATTR_PK if pk == 1 else ST_ATTR_DERIVED if pk == 2 else ST_ATTR
+            rect(cells, f"{eid}_a{i}", name, attr_style, ax, cy + i * step - ATTR_H / 2, ATTR_W, ATTR_H)
             edge(cells, f"{eid}_ae{i}", eid, f"{eid}_a{i}")
     elif attr_mode == "right":                    # 属性竖排在实体右侧
         ax = x + w + 60
         for i, (name, pk) in enumerate(attrs):
-            rect(cells, f"{eid}_a{i}", name, ST_ATTR_PK if pk else ST_ATTR, ax, cy + i * step - ATTR_H / 2, ATTR_W, ATTR_H)
+            attr_style = ST_ATTR_PK if pk == 1 else ST_ATTR_DERIVED if pk == 2 else ST_ATTR
+            rect(cells, f"{eid}_a{i}", name, attr_style, ax, cy + i * step - ATTR_H / 2, ATTR_W, ATTR_H)
             edge(cells, f"{eid}_ae{i}", eid, f"{eid}_a{i}")
 
 def build_page(name, prefix, entities, rel_coords, style, width, height, legend, with_attrs=True):
@@ -142,10 +150,10 @@ def main():
 
     p2 = build_page(
         "基本E-R图-诗歌域", "p2",
-        [(POET, (180, 420)), (POEM, (640, 420)), (COLL, (1140, 420)), (GENRE, (700, 60, "left"))],
+        [(POET, (180, 420, "left")), (POEM, (640, 420)), (COLL, (1140, 420, "right")), (GENRE, (700, 60, "left"))],
         {"创作": (430, 435), "收录": (930, 435), "属于": (820, 210)},
         ST_ENTITY, 1600, 900,
-        "图例：矩形 = 实体　菱形 = 联系　椭圆 = 属性　下划线 = 主键　（基本E-R图·诗歌域，与用户域合并即完整图）")
+        "图例：矩形 = 实体　菱形 = 联系　椭圆 = 属性　下划线 = 主键　虚线椭圆 = 派生属性（不落表）")
 
     p3 = build_page(
         "基本E-R图-用户域", "p3",
@@ -155,7 +163,7 @@ def main():
          "评论(用户)": (420, 560), "评论(诗歌)": (800, 520),
          "收藏(用户)": (400, 700), "收藏(诗歌)": (820, 700)},
         ST_ENTITY2, 1600, 900,
-        "图例：矩形 = 实体　菱形 = 联系　椭圆 = 属性　下划线 = 主键　（基本E-R图·用户域；诗歌实体属性见图二）")
+        "图例：矩形 = 实体　菱形 = 联系　椭圆 = 属性　下划线 = 主键　（诗歌属性见图二）")
 
     diagrams = []
     for i, (name, cells, w, h) in enumerate([p1, p2, p3], 1):
