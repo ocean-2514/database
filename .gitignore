@@ -1,0 +1,3 @@
+# 忽略规则: backend 目录的规则见 backend/.gitignore
+
+__pycache__/
