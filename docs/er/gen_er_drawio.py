@@ -34,7 +34,7 @@ ST_ATTR_DERIVED = "ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=
 ST_TEXT    = "text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;"
 
 POET   = ("poet",  "诗人", [("poet_id", 1), ("姓名", 0), ("笔名", 0), ("性别", 0),
-                            ("生年", 0), ("卒年", 0), ("国籍", 0), ("朝代/时期", 0),
+                            ("生年", 0), ("卒年", 0), ("国籍", 0),
                             ("简介", 0), ("创建时间", 0), ("更新时间", 0)])
 POEM   = ("poem",  "诗歌", [("poem_id", 1), ("标题", 0), ("正文", 0), ("创作年份", 0),
                             ("体裁", 0), ("字数（派生）", 2), ("赏析", 0), ("发布状态", 0),

@@ -15,7 +15,7 @@
 
 8 个核心实体：诗人、诗集、诗歌、流派、用户、评分记录、评论、收藏记录。另有两个多对多联系：诗歌—流派、诗集—诗歌。评分、评论、收藏分别由关联用户和诗歌的记录实体表示。
 
-- 诗人：`poet_id`、姓名、笔名、性别、生年、卒年、国籍、朝代/时期、简介、创建/更新时间。
+- 诗人：`poet_id`、姓名、笔名、性别、生年、卒年、国籍、简介、创建/更新时间。
 - 诗歌：`poem_id`、标题、正文、创作年份、体裁、赏析、作者、发布状态、创建/更新时间。字数是派生属性 `CHAR_LENGTH(content)`，不存储。
 - 诗集：`collection_id`、名称、出版年份、出版社、ISBN、简介。
 - 流派：`genre_id`、名称、描述。
@@ -56,7 +56,7 @@ erDiagram
 
 ## 关系模式与规范化要点
 
-1. `poet(poet_id, name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography, created_at, updated_at)`
+1. `poet(poet_id, name, pen_name, gender, birth_year, death_year, nationality, biography, created_at, updated_at)`
 2. `poetry_collection(collection_id, collection_name, publication_year, publisher, isbn, description)`
 3. `poem(poem_id, title, content, creation_year, poem_form, appreciation, poet_id, publication_status, created_at, updated_at)`
 4. `genre(genre_id, genre_name, description)`
