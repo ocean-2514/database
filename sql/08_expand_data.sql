@@ -20,56 +20,56 @@ FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM genre WHERE genre_name = '七月派');
 
 -- ---------- 新增诗人(13位, 一人一首名作) ----------
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '闻一多', NULL, '男', 1899, 1946, '中国', '近现代', '新月派代表诗人、学者, 提倡"三美", 代表诗集《红烛》《死水》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '闻一多', NULL, '男', 1899, 1946, '中国', '新月派代表诗人、学者, 提倡"三美", 代表诗集《红烛》《死水》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '闻一多');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '刘半农', NULL, '男', 1891, 1934, '中国', '近现代', '新文化运动先驱, 语言学上首创"她"字, 代表作《教我如何不想她》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '刘半农', NULL, '男', 1891, 1934, '中国', '新文化运动先驱, 语言学上首创"她"字, 代表作《教我如何不想她》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '刘半农');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '冰心', '谢婉莹', '女', 1900, 1999, '中国', '近现代', '小诗体代表诗人、散文家, 出版诗集《繁星》《春水》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '冰心', '谢婉莹', '女', 1900, 1999, '中国', '小诗体代表诗人、散文家, 出版诗集《繁星》《春水》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '冰心');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '林徽因', NULL, '女', 1904, 1955, '中国', '近现代', '建筑学家、诗人, 代表作《你是人间的四月天》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '林徽因', NULL, '女', 1904, 1955, '中国', '建筑学家、诗人, 代表作《你是人间的四月天》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '林徽因');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '卞之琳', NULL, '男', 1910, 2000, '中国', '近现代', '现代派诗人, 诗风智性凝练, 代表作《断章》、诗集《鱼目集》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '卞之琳', NULL, '男', 1910, 2000, '中国', '现代派诗人, 诗风智性凝练, 代表作《断章》、诗集《鱼目集》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '卞之琳');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '郭沫若', NULL, '男', 1892, 1978, '中国', '近现代', '新诗奠基人之一, 代表诗集《女神》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '郭沫若', NULL, '男', 1892, 1978, '中国', '新诗奠基人之一, 代表诗集《女神》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '郭沫若');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '艾青', NULL, '男', 1910, 1996, '中国', '近现代', '七月派代表诗人, 以土地与太阳为核心意象, 代表作《大堰河——我的保姆》《我爱这土地》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '艾青', NULL, '男', 1910, 1996, '中国', '七月派代表诗人, 以土地与太阳为核心意象, 代表作《大堰河——我的保姆》《我爱这土地》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '艾青');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '顾城', NULL, '男', 1956, 1993, '中国', '近现代', '朦胧诗派代表诗人, 被称为"童话诗人", 代表作《一代人》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '顾城', NULL, '男', 1956, 1993, '中国', '朦胧诗派代表诗人, 被称为"童话诗人", 代表作《一代人》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '顾城');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '余光中', NULL, '男', 1928, 2017, '中国', '近现代', '现当代诗人、散文家, 代表作《乡愁》《白玉苦瓜》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '余光中', NULL, '男', 1928, 2017, '中国', '现当代诗人、散文家, 代表作《乡愁》《白玉苦瓜》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '余光中');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '郑愁予', NULL, '男', 1933, NULL, '中国', '近现代', '现代派诗人, 代表作《错误》, 被称为"中国的中国诗人"。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '郑愁予', NULL, '男', 1933, NULL, '中国', '现代派诗人, 代表作《错误》, 被称为"中国的中国诗人"。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '郑愁予');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '席慕蓉', NULL, '女', 1943, NULL, '中国', '近现代', '当代女诗人、画家, 代表诗集《七里香》《无怨的青春》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '席慕蓉', NULL, '女', 1943, NULL, '中国', '当代女诗人、画家, 代表诗集《七里香》《无怨的青春》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '席慕蓉');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '汪国真', NULL, '男', 1956, 2015, '中国', '近现代', '当代诗人, 诗句清朗励志, 在二十世纪九十年代风靡校园。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '汪国真', NULL, '男', 1956, 2015, '中国', '当代诗人, 诗句清朗励志, 在二十世纪九十年代风靡校园。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '汪国真');
 
-INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, dynasty, biography)
-SELECT '食指', '郭路生', '男', 1948, NULL, '中国', '近现代', '朦胧诗先驱, 代表作《相信未来》《这是四点零八分的北京》。'
+INSERT INTO poet (name, pen_name, gender, birth_year, death_year, nationality, biography)
+SELECT '食指', '郭路生', '男', 1948, NULL, '中国', '朦胧诗先驱, 代表作《相信未来》《这是四点零八分的北京》。'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM poet WHERE name = '食指');
 
 -- ---------- 新增诗歌(13首, 均为节选或短章) ----------

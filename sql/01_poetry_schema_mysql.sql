@@ -25,13 +25,11 @@ CREATE TABLE IF NOT EXISTS poet (
   birth_year SMALLINT NULL COMMENT '负数表示公元前，NULL 表示未知',
   death_year SMALLINT NULL COMMENT '负数表示公元前，NULL 表示未知',
   nationality VARCHAR(64) NULL,
-  dynasty VARCHAR(64) NULL,
   biography TEXT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (poet_id),
   KEY idx_poet_name (name),
-  KEY idx_poet_dynasty (dynasty, poet_id),
   CONSTRAINT chk_poet_life_years
     CHECK (birth_year IS NULL OR death_year IS NULL OR birth_year <= death_year)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='诗人';
@@ -184,5 +182,8 @@ USE poetry_db;
 SET NAMES utf8mb4;
 
 ALTER TABLE poem
-  ADD FULLTEXT INDEX ft_poem_title (title) WITH PARSER ngram,
+  ADD FULLTEXT INDEX ft_poem_title (title) WITH PARSER ngram;
+
+-- InnoDB 每次 ALTER 只允许创建一个 FULLTEXT 索引, 必须分两条执行。
+ALTER TABLE poem
   ADD FULLTEXT INDEX ft_poem_content (content) WITH PARSER ngram;

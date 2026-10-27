@@ -5,5 +5,8 @@ USE poetry_db;
 SET NAMES utf8mb4;
 
 ALTER TABLE poem
-  ADD FULLTEXT INDEX ft_poem_title (title) WITH PARSER ngram,
+  ADD FULLTEXT INDEX ft_poem_title (title) WITH PARSER ngram;
+
+-- InnoDB 每次 ALTER 只允许创建一个 FULLTEXT 索引, 必须分两条执行。
+ALTER TABLE poem
   ADD FULLTEXT INDEX ft_poem_content (content) WITH PARSER ngram;

@@ -10,7 +10,6 @@ CREATE PROCEDURE sp_search_poems (
   IN p_keyword VARCHAR(255),
   IN p_poet_name VARCHAR(100),
   IN p_genre_name VARCHAR(100),
-  IN p_dynasty VARCHAR(64),
   IN p_year_from SMALLINT,
   IN p_year_to SMALLINT,
   IN p_collection_name VARCHAR(200),
@@ -34,7 +33,6 @@ BEGIN
     AND (p_keyword IS NULL OR p.title LIKE CONCAT('%', p_keyword, '%')
          OR p.content LIKE CONCAT('%', p_keyword, '%'))
     AND (p_poet_name IS NULL OR pt.name LIKE CONCAT('%', p_poet_name, '%'))
-    AND (p_dynasty IS NULL OR pt.dynasty = p_dynasty)
     AND (p_year_from IS NULL OR p.creation_year >= p_year_from)
     AND (p_year_to IS NULL OR p.creation_year <= p_year_to)
     AND (p_genre_name IS NULL OR EXISTS (
@@ -55,7 +53,6 @@ BEGIN
   SELECT p.poem_id,
          p.title,
          pt.name AS poet_name,
-         pt.dynasty,
          p.creation_year,
          p.poem_form,
          CHAR_LENGTH(p.content) AS word_count,
@@ -72,7 +69,6 @@ BEGIN
     AND (p_keyword IS NULL OR p.title LIKE CONCAT('%', p_keyword, '%')
          OR p.content LIKE CONCAT('%', p_keyword, '%'))
     AND (p_poet_name IS NULL OR pt.name LIKE CONCAT('%', p_poet_name, '%'))
-    AND (p_dynasty IS NULL OR pt.dynasty = p_dynasty)
     AND (p_year_from IS NULL OR p.creation_year >= p_year_from)
     AND (p_year_to IS NULL OR p.creation_year <= p_year_to)
     AND (p_genre_name IS NULL OR EXISTS (
@@ -103,7 +99,7 @@ BEGIN
   SELECT p.poem_id,
          p.title,
          pt.name AS poet_name,
-         p.creation_year,
+         p.creation_year AS create_year,
          MATCH(p.title) AGAINST (p_keyword IN NATURAL LANGUAGE MODE)
            + MATCH(p.content) AGAINST (p_keyword IN NATURAL LANGUAGE MODE) AS relevance
   FROM poem AS p
