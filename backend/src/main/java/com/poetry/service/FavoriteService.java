@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * 收藏业务: 添加 / 取消 / 我的收藏(分页)。
- * 防重复的两道防线: 应用层预查(友好提示) + favorite 表 UNIQUE(user_id, poem_id)(数据库层保证)。
+ * 防重复的两道防线: 应用层预查(友好提示) + poem_favorite 表 UNIQUE(user_id, poem_id)(数据库层保证)。
  */
 @Service
 public class FavoriteService {
@@ -25,7 +25,7 @@ public class FavoriteService {
 
     public void add(Long userId, Long poemId, String favoriteType) {
         if (poemMapper.countPoemById(poemId) == 0) {
-            throw new IllegalArgumentException("诗歌不存在: id=" + poemId);
+            throw new IllegalArgumentException("诗歌不存在或已下架: id=" + poemId);
         }
         if (favoriteMapper.findUserFavorite(userId, poemId) != null) {
             throw new IllegalArgumentException("已收藏过该诗歌");

@@ -3,10 +3,10 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.poetry.mapper.PoemMapper">
 
-    <!-- 共用的组合检索条件: 参数为空即忽略该条件, 语义与存储过程
-         sp_search_poems 的 WHERE 完全一致 -->
+    <!-- 共用的组合检索条件: 参数为空即忽略该条件; 只检索已发布诗歌 -->
     <sql id="searchCondition">
         <where>
+            AND p.publication_status = 'published'
             <if test="keyword != null and keyword != ''">
                 AND (p.title LIKE CONCAT('%', #{keyword}, '%')
                  OR  p.content LIKE CONCAT('%', #{keyword}, '%'))
@@ -15,37 +15,37 @@
                 AND pt.name LIKE CONCAT('%', #{poetName}, '%')
             </if>
             <if test="yearFrom != null">
-                AND p.create_year &gt;= #{yearFrom}
+                AND p.creation_year &gt;= #{yearFrom}
             </if>
             <if test="yearTo != null">
-                AND p.create_year &lt;= #{yearTo}
+                AND p.creation_year &lt;= #{yearTo}
             </if>
             <if test="genre != null and genre != ''">
                 AND p.poem_id IN (
                     SELECT pg.poem_id
                       FROM poem_genre pg
                       JOIN genre g ON g.genre_id = pg.genre_id
-                     WHERE g.name LIKE CONCAT('%', #{genre}, '%')
+                     WHERE g.genre_name LIKE CONCAT('%', #{genre}, '%')
                 )
             </if>
         </where>
     </sql>
 
-    <!-- 组合检索(当前页数据): 统计列用相关子查询实时计算,
+    <!-- 组合检索(当前页数据): 字数与统计列在查询时派生,
          ORDER BY 走别名 avg_score (MySQL 允许 ORDER BY 引用列别名) -->
     <select id="searchPoems" resultType="com.poetry.entity.PoemBrief">
         SELECT p.poem_id,
                p.title,
                pt.name AS poet_name,
-               p.create_year,
-               p.form,
-               p.word_count,
+               p.creation_year AS create_year,
+               p.poem_form AS form,
+               CHAR_LENGTH(p.content) AS word_count,
                IFNULL((SELECT ROUND(AVG(r.score), 1)
-                         FROM rating r
+                         FROM poem_rating r
                         WHERE r.poem_id = p.poem_id), 0)                AS avg_score,
-               (SELECT COUNT(*) FROM rating r   WHERE r.poem_id = p.poem_id) AS rating_count,
-               (SELECT COUNT(*) FROM `comment` c WHERE c.poem_id = p.poem_id) AS comment_count,
-               (SELECT COUNT(*) FROM favorite f WHERE f.poem_id = p.poem_id)  AS favorite_count
+               (SELECT COUNT(*) FROM poem_rating r   WHERE r.poem_id = p.poem_id) AS rating_count,
+               (SELECT COUNT(*) FROM poem_comment c  WHERE c.poem_id = p.poem_id) AS comment_count,
+               (SELECT COUNT(*) FROM poem_favorite f WHERE f.poem_id = p.poem_id) AS favorite_count
         FROM poem p
         JOIN poet pt ON pt.poet_id = p.poet_id
         <include refid="searchCondition"/>
@@ -71,18 +71,35 @@
         <include refid="searchCondition"/>
     </select>
 
-    <!-- 诗歌详情: 直接查询视图(外模式), 屏蔽底层多表连接 -->
+    <!-- 诗歌详情: 查询视图(外模式, 视图内已过滤已发布);
+         列别名保持 Java 字段名 createYear/form 不变 -->
     <select id="getPoemDetail" resultType="com.poetry.entity.PoemDetail">
-        SELECT *
+        SELECT poem_id,
+               title,
+               content,
+               creation_year AS create_year,
+               poem_form     AS form,
+               word_count,
+               appreciation,
+               poet_id,
+               poet_name,
+               pen_name,
+               birth_year,
+               death_year,
+               genres,
+               avg_score,
+               comment_count,
+               favorite_count
         FROM v_poem_detail
         WHERE poem_id = #{poemId}
     </select>
 
-    <!-- 存在性检查 -->
+    <!-- 存在性检查: 只认已发布诗歌(收藏/评分/评论等互动的准入条件) -->
     <select id="countPoemById" resultType="long">
         SELECT COUNT(*)
         FROM poem
         WHERE poem_id = #{poemId}
+          AND publication_status = 'published'
     </select>
 
     <!-- 中文全文检索: 调用存储过程, ngram 解析器分词, 按相关度排序 -->
@@ -93,25 +110,31 @@
 
     <!-- ================ 管理端 ================ -->
 
-    <!-- 不写 word_count 列, 由触发器 trg_poem_word_count_bi 依据正文填充 -->
+    <!-- 字数不落表, 查询时由 CHAR_LENGTH(content) 派生 -->
     <insert id="insertPoem" useGeneratedKeys="true" keyProperty="poemId">
-        INSERT INTO poem (title, content, create_year, form, appreciation, poet_id)
+        INSERT INTO poem (title, content, creation_year, poem_form, appreciation, poet_id)
         VALUES (#{title}, #{content}, #{createYear}, #{form}, #{appreciation}, #{poetId})
     </insert>
 
-    <!-- 正文变化时触发器 trg_poem_word_count_bu 重算字数 -->
     <update id="updatePoem">
         UPDATE poem
-        SET title = #{title},
-            content = #{content},
-            create_year = #{createYear},
-            form = #{form},
-            appreciation = #{appreciation},
-            poet_id = #{poetId}
+        SET title         = #{title},
+            content       = #{content},
+            creation_year = #{createYear},
+            poem_form     = #{form},
+            appreciation  = #{appreciation},
+            poet_id       = #{poetId}
         WHERE poem_id = #{poemId}
     </update>
 
-    <!-- 下架: rating/comment/favorite/poem_genre/collection_poem 经外键级联清除 -->
+    <!-- 下架/恢复: 状态变更保留历史互动记录(外键为 RESTRICT) -->
+    <update id="updatePublicationStatus">
+        UPDATE poem
+        SET publication_status = #{status}
+        WHERE poem_id = #{poemId}
+    </update>
+
+    <!-- 物理删除: 存在评分/评论/收藏等引用时会被 RESTRICT 外键拦截 -->
     <delete id="deletePoemById">
         DELETE FROM poem WHERE poem_id = #{poemId}
     </delete>

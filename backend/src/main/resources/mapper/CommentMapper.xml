@@ -3,13 +3,15 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.poetry.mapper.CommentMapper">
 
+    <!-- 列别名保持 Java 实体字段名 commentTime 不变 -->
     <sql id="commentColumns">
-        comment_id, user_id, poem_id, content, comment_time, like_count
+        comment_id, user_id, poem_id, content,
+        created_at AS comment_time, like_count
     </sql>
 
     <select id="findByCommentId" resultType="com.poetry.entity.Comment">
         SELECT <include refid="commentColumns"/>
-        FROM `comment`
+        FROM poem_comment
         WHERE comment_id = #{commentId}
     </select>
 
@@ -19,34 +21,34 @@
                u.username,
                c.content,
                c.like_count,
-               c.comment_time
-        FROM `comment` c
-        JOIN `user` u ON u.user_id = c.user_id
+               c.created_at AS comment_time
+        FROM poem_comment c
+        JOIN app_user u ON u.user_id = c.user_id
         WHERE c.poem_id = #{poemId}
-        ORDER BY c.comment_time DESC
+        ORDER BY c.created_at DESC, c.comment_id DESC
         LIMIT #{offset}, #{pageSize}
     </select>
 
     <select id="countByPoem" resultType="long">
         SELECT COUNT(*)
-        FROM `comment`
+        FROM poem_comment
         WHERE poem_id = #{poemId}
     </select>
 
     <!-- useGeneratedKeys: 插入后 MySQL 的自增 comment_id 回填到参数对象 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="commentId">
-        INSERT INTO `comment` (user_id, poem_id, content)
+        INSERT INTO poem_comment (user_id, poem_id, content)
         VALUES (#{userId}, #{poemId}, #{content})
     </insert>
 
     <update id="updateContent">
-        UPDATE `comment`
+        UPDATE poem_comment
         SET content = #{content}
         WHERE comment_id = #{commentId}
     </update>
 
     <delete id="deleteComment">
-        DELETE FROM `comment`
+        DELETE FROM poem_comment
         WHERE comment_id = #{commentId}
     </delete>
 </mapper>

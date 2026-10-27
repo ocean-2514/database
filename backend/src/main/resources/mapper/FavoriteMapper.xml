@@ -5,43 +5,46 @@
 
     <select id="findUserFavorite" resultType="long">
         SELECT favorite_id
-        FROM favorite
+        FROM poem_favorite
         WHERE user_id = #{userId} AND poem_id = #{poemId}
     </select>
 
     <insert id="insertFavorite">
-        INSERT INTO favorite (user_id, poem_id, favorite_type)
+        INSERT INTO poem_favorite (user_id, poem_id, favorite_type)
         VALUES (#{userId}, #{poemId}, #{favoriteType})
     </insert>
 
     <delete id="deleteFavorite">
-        DELETE FROM favorite
+        DELETE FROM poem_favorite
         WHERE user_id = #{userId} AND poem_id = #{poemId}
     </delete>
 
-    <!-- 我的收藏(当前页): 收藏时间倒序, JOIN 出诗歌与作者信息, 评分实时计算 -->
+    <!-- 我的收藏(当前页): 收藏时间倒序, 只展示仍处于已发布状态的诗歌 -->
     <select id="listUserFavorites" resultType="com.poetry.entity.FavoriteItem">
         SELECT p.poem_id,
                p.title,
                pt.name AS poet_name,
-               p.create_year,
-               p.form,
+               p.creation_year AS create_year,
+               p.poem_form AS form,
                IFNULL((SELECT ROUND(AVG(r.score), 1)
-                         FROM rating r
+                         FROM poem_rating r
                         WHERE r.poem_id = p.poem_id), 0) AS avg_score,
                f.favorite_type,
-               f.favorite_time
-        FROM favorite f
+               f.favorited_at AS favorite_time
+        FROM poem_favorite f
         JOIN poem p  ON p.poem_id  = f.poem_id
         JOIN poet pt ON pt.poet_id = p.poet_id
         WHERE f.user_id = #{userId}
-        ORDER BY f.favorite_time DESC
+          AND p.publication_status = 'published'
+        ORDER BY f.favorited_at DESC
         LIMIT #{offset}, #{pageSize}
     </select>
 
     <select id="countUserFavorites" resultType="long">
         SELECT COUNT(*)
-        FROM favorite
-        WHERE user_id = #{userId}
+        FROM poem_favorite f
+        JOIN poem p ON p.poem_id = f.poem_id
+        WHERE f.user_id = #{userId}
+          AND p.publication_status = 'published'
     </select>
 </mapper>

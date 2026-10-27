@@ -27,7 +27,7 @@ public class RatingService {
             throw new IllegalArgumentException("评分需为 1-5 的整数");
         }
         if (poemMapper.countPoemById(poemId) == 0) {
-            throw new IllegalArgumentException("诗歌不存在: id=" + poemId);
+            throw new IllegalArgumentException("诗歌不存在或已下架: id=" + poemId);
         }
         int rows = ratingMapper.upsert(userId, poemId, score);
         return rows == 1 ? "created" : "updated";

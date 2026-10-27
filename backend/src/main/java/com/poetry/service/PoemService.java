@@ -44,7 +44,7 @@ public class PoemService {
     public PoemDetail getDetail(Long poemId) {
         PoemDetail detail = poemMapper.getPoemDetail(poemId);
         if (detail == null) {
-            throw new IllegalArgumentException("诗歌不存在: id=" + poemId);
+            throw new IllegalArgumentException("诗歌不存在或已下架: id=" + poemId);
         }
         return detail;
     }

@@ -1,11 +1,13 @@
 package com.poetry.service;
 
+import com.poetry.common.BusinessException;
 import com.poetry.dto.LoginRequest;
 import com.poetry.dto.RegisterParam;
 import com.poetry.dto.RegisterRequest;
 import com.poetry.dto.UserView;
 import com.poetry.entity.User;
 import com.poetry.mapper.UserMapper;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +15,7 @@ import org.springframework.stereotype.Service;
  * 认证业务: 注册 / 登录 / 当前用户 / 登出。
  *
  * 注册链路有三层校验: 应用层参数校验、服务层用户名预查重、
- * 数据库端存储过程查重与 UNIQUE 约束。
+ * 数据库端存储过程(用户名+邮箱查重)与 UNIQUE 约束。
  */
 @Service
 public class AuthService {
@@ -27,7 +29,7 @@ public class AuthService {
     }
 
     public UserView register(RegisterRequest req) {
-        // 1. 应用层校验
+        // 1. 应用层校验(邮箱必填, 与数据库 NOT NULL 约束一致)
         String username = req.getUsername() == null ? "" : req.getUsername().trim();
         if (username.length() < 2 || username.length() > 30) {
             throw new IllegalArgumentException("用户名长度需为 2-30 个字符");
@@ -37,11 +39,14 @@ public class AuthService {
             throw new IllegalArgumentException("密码长度需为 6-64 个字符");
         }
         String email = req.getEmail() == null ? "" : req.getEmail().trim();
-        if (!email.isEmpty() && !email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+        if (email.isEmpty()) {
+            throw new IllegalArgumentException("邮箱不能为空");
+        }
+        if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
             throw new IllegalArgumentException("邮箱格式不正确");
         }
 
-        // 2. 用户名预查重, 给出友好提示; 并发场景由存储过程查重与 UNIQUE 约束保证
+        // 2. 用户名预查重, 给出友好提示; 邮箱与并发场景由存储过程与 UNIQUE 约束保证
         if (userMapper.findByUsername(username) != null) {
             throw new IllegalArgumentException("用户名已存在");
         }
@@ -50,9 +55,14 @@ public class AuthService {
         RegisterParam param = new RegisterParam();
         param.setUsername(username);
         param.setPasswordHash(passwordEncoder.encode(password));
-        param.setEmail(email.isEmpty() ? null : email);
+        param.setEmail(email);
 
-        userMapper.register(param);   // 调存储过程, 新用户ID回填到 param.userId
+        try {
+            userMapper.register(param);   // 调存储过程, 新用户ID回填到 param.userId
+        } catch (DataAccessException e) {
+            // 存储过程 SIGNAL: 用户名或邮箱已存在
+            throw new BusinessException(400, "用户名或邮箱已存在");
+        }
         User user = userMapper.findByUsername(username);
         return UserView.from(user);
     }
@@ -67,8 +77,8 @@ public class AuthService {
                         user.getPasswordHash())) {
             throw new IllegalArgumentException("用户名或密码错误");
         }
-        if ("banned".equals(user.getStatus())) {
-            throw new IllegalArgumentException("账户已被封禁");
+        if ("disabled".equals(user.getStatus())) {
+            throw new IllegalArgumentException("账户已被停用");
         }
 
         // 登录成功: 用户身份写入会话, 后续请求凭 Cookie(JSESSIONID) 找回

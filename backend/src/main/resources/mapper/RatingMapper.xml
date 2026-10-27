@@ -3,13 +3,14 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.poetry.mapper.RatingMapper">
 
+    <!-- 列别名保持 Java 实体字段名 ratingTime 不变 -->
     <sql id="ratingColumns">
-        rating_id, user_id, poem_id, score, rating_time
+        rating_id, user_id, poem_id, score, rated_at AS rating_time
     </sql>
 
     <select id="findByUserAndPoem" resultType="com.poetry.entity.Rating">
         SELECT <include refid="ratingColumns"/>
-        FROM rating
+        FROM poem_rating
         WHERE user_id = #{userId} AND poem_id = #{poemId}
     </select>
 
@@ -18,15 +19,15 @@
          用 ON DUPLICATE KEY UPDATE 覆盖写, 避免"先查后插"在并发下的竞态;
          UPDATE 分支同时刷新评分时间 -->
     <insert id="upsert">
-        INSERT INTO rating (user_id, poem_id, score)
+        INSERT INTO poem_rating (user_id, poem_id, score)
         VALUES (#{userId}, #{poemId}, #{score})
         ON DUPLICATE KEY UPDATE
-            score       = #{score},
-            rating_time = CURRENT_TIMESTAMP
+            score    = #{score},
+            rated_at = CURRENT_TIMESTAMP
     </insert>
 
     <delete id="deleteRating">
-        DELETE FROM rating
+        DELETE FROM poem_rating
         WHERE user_id = #{userId} AND poem_id = #{poemId}
     </delete>
 </mapper>

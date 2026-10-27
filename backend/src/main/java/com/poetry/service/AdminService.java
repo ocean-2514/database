@@ -20,7 +20,8 @@ import java.util.List;
  *
  * 数据库端防线在本层的呈现(答辩演示点):
  *   - 删除有作品的诗人 → 触发器 trg_poet_bd SIGNAL → 转成 400 提示;
- *   - 新增诗歌不写字数 → 触发器 trg_poem_word_count_bi 自动填充;
+ *   - 字数不落表, 查询时由 CHAR_LENGTH(content) 派生;
+ *   - 下架 = 发布状态变更为 withdrawn, 历史互动记录保留(RESTRICT 外键);
  *   - 新建诗集调事务存储过程, 部分诗歌ID无效则整体回滚;
  *   - 流派重名 / ISBN 重复 → UNIQUE 约束 → 转成 400 提示。
  */
@@ -89,9 +90,26 @@ public class AdminService {
         }
     }
 
-    public void deletePoem(Long poemId) {
-        if (poemMapper.deletePoemById(poemId) == 0) {
+    /** 下架/恢复: 只变更 publication_status, 不删除数据 */
+    public void changePublicationStatus(Long poemId, String status) {
+        if (!"published".equals(status) && !"withdrawn".equals(status)) {
+            throw new IllegalArgumentException("发布状态只能是 published 或 withdrawn");
+        }
+        if (poemMapper.updatePublicationStatus(poemId, status) == 0) {
             throw new BusinessException(404, "诗歌不存在: id=" + poemId);
+        }
+    }
+
+    /** 物理删除: 存在评分/评论/收藏时会被 RESTRICT 外键拦截, 正常情况下应走下架 */
+    public void deletePoem(Long poemId) {
+        try {
+            if (poemMapper.deletePoemById(poemId) == 0) {
+                throw new BusinessException(404, "诗歌不存在: id=" + poemId);
+            }
+        } catch (DataAccessException e) {
+            throw new BusinessException(400,
+                    "删除被数据库规则拦截(存在评分/评论/收藏等关联记录, 请改用下架): "
+                            + e.getMostSpecificCause().getMessage());
         }
     }
 

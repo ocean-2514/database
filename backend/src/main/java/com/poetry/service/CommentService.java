@@ -35,7 +35,7 @@ public class CommentService {
     public long add(Long userId, Long poemId, CommentRequest req) {
         String content = validateContent(req);
         if (poemMapper.countPoemById(poemId) == 0) {
-            throw new BusinessException(404, "诗歌不存在: id=" + poemId);
+            throw new BusinessException(404, "诗歌不存在或已下架: id=" + poemId);
         }
         Comment comment = new Comment();
         comment.setUserId(userId);
@@ -60,7 +60,7 @@ public class CommentService {
 
     public PageResult<CommentItem> list(Long poemId, Integer page, Integer pageSize) {
         if (poemMapper.countPoemById(poemId) == 0) {
-            throw new BusinessException(404, "诗歌不存在: id=" + poemId);
+            throw new BusinessException(404, "诗歌不存在或已下架: id=" + poemId);
         }
         int p = (page == null || page < 1) ? 1 : page;
         int size = (pageSize == null || pageSize < 1) ? 10 : Math.min(pageSize, 50);

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -59,7 +60,7 @@ public class AdminController {
 
     // ---------------- 诗歌 ----------------
 
-    /** POST /api/admin/poems, 请求体 JSON(title/content/poetId 必填, 字数自动维护) */
+    /** POST /api/admin/poems, 请求体 JSON(title/content/poetId 必填, 字数查询时派生) */
     @PostMapping("/api/admin/poems")
     public ApiResponse<Map<String, Long>> addPoem(@RequestBody Poem poem) {
         return ApiResponse.ok(Map.of("poemId", adminService.addPoem(poem)));
@@ -71,7 +72,15 @@ public class AdminController {
         return ApiResponse.ok(null);
     }
 
-    /** DELETE /api/admin/poems/{id} —— 下架, 互动数据级联清除 */
+    /** PUT /api/admin/poems/1/status?value=withdrawn —— 下架/恢复(状态变更, 保留历史) */
+    @PutMapping("/api/admin/poems/{poemId}/status")
+    public ApiResponse<Void> changeStatus(@PathVariable Long poemId,
+                                          @RequestParam("value") String value) {
+        adminService.changePublicationStatus(poemId, value);
+        return ApiResponse.ok(null);
+    }
+
+    /** DELETE /api/admin/poems/{id} —— 物理删除; 有互动记录时会被外键拦截, 应改用下架 */
     @DeleteMapping("/api/admin/poems/{poemId}")
     public ApiResponse<Void> deletePoem(@PathVariable Long poemId) {
         adminService.deletePoem(poemId);
