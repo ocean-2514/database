@@ -1,0 +1,29 @@
+[project]
+name = "poetry-backend-django"
+version = "0.1.0"
+description = "诗歌信息检索与赏析管理系统 - Django 服务端"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=5.2,<6.0",
+    "pymysql[rsa]>=1.1.1",
+    "bcrypt>=4.2.0",
+    "python-dotenv>=1.2.4",
+]
+
+[tool.uv]
+package = false
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+default = true
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+# 默认的错误规则即可；视图中有意保留显式 return None 以阻止分支穿透。
+select = ["E4", "E7", "E9", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# 测试脚本必须先 django.setup() 再导入 Django 组件
+"scripts/smoke_test.py" = ["E402"]

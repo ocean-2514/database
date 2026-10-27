@@ -1,0 +1,11 @@
+# Python / uv / Django
+.venv/
+__pycache__/
+*.py[cod]
+.env
+*.sqlite3
+
+# Tool caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/

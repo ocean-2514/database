@@ -1,3 +1,13 @@
-# 忽略规则: backend 目录的规则见 backend/.gitignore
-
+# Python / uv / Django
+.venv/
 __pycache__/
+*.py[cod]
+.env
+*.sqlite3
+
+# IDE / Tool caches
+.idea/
+.vscode/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
